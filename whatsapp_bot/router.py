@@ -93,15 +93,15 @@ CHITCHAT = [
      "Anytime! That's what I'm here for 🐟"),
     (("are you a robot", "are you a bot", "are you real", "who are you",
       "what are you", "your name", "who made you", "about you"),
-     "I'm the Kochi Marine Info bot 🐟 - a demo assistant for Kochi port.\n"
-     "I read your message and answer from a (fake) backend. Type *menu* to see what I can do."),
+     "I'm Tarang: The Kochi Marine Info bot 🐟 - a demo assistant for Kochi port.\n"
+     "Type *menu* to see what I can do."),
     (("how are you", "how's it going", "how are things", "what's up",
       "sup", "how do you do"),
-     "All calm here at Kochi harbour 🌊. What can I help with? e.g. *pfz* / *safety* / *tide* / *alerts*"),
+     "All calm here at Kochi harbour 🌊. What can I help with? \ne.g. *pfz* / *safety* / *tide* / *alerts*"),
     (("good morning", "good afternoon", "good evening"),
-     "☀️ Good day! Ready to help with today's sea, tide & alerts. 🎣"),
+     "Good day! Ready to help with today's sea, tide & alerts."),
     (("i love you", "you are great", "awesome", "great bot", "nice bot", "good bot"),
-     "😊 Thank you! Happy fishing, and stay safe on the water! 🐟"),
+     "Thank you! 😊 Happy fishing, and stay safe on the water! 🐟"),
 ]
 # The conversational router ---------------------------------------------------
 class Router:
@@ -268,7 +268,7 @@ class Router:
             return i18n.t(lang, "empty")
         reply = self._respond(number, text)
         if has_ml:
-            reply = ("🈯 Note: Malayalam detected - replying in English 🐟.\n\n" + reply)
+            reply = ("Note: Malayalam detected --- replying in English.\n\n" + reply)
         return reply
 
     def _respond(self, number, text):

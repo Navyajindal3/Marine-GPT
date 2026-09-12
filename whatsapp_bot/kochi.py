@@ -48,15 +48,27 @@ def boat_label(label, lang="en"):
 
 
 BOAT_QUESTION = (
-    "🛥️ What boat type are you using?\n"
-    "Reply: canoe / vallam / gill netter / outboard / trawler / purse seiner\n"
-    "(or 'default' for a coastal motorboat)"
+    "What boat type are you using?\n\n"
+    "*Available options:*\n"
+    "• Canoe\n"
+    "• Vallam\n"
+    "• Gill netter\n"
+    "• Outboard\n"
+    "• Trawler\n"
+    "• Purse seiner\n\n"
+    "Or reply *default* for a coastal motorboat."
 )
 
 BOAT_QUESTION_HI = (
-    "🛥️ आप किस तरह की नाव इस्तेमाल करते हैं?\n"
-    "भेजें: canoe / नाव / gill netter / outboard / trawler / पर्स सीनर\n"
-    "(या तटीय मोटरबोट के लिए 'default')"
+    "आप किस तरह की नाव इस्तेमाल करते हैं?\n\n"
+    "*उपलब्ध विकल्प:*\n"
+    "• Canoe\n"
+    "• Vallam / नाव\n"
+    "• Gill netter\n"
+    "• Outboard\n"
+    "• Trawler\n"
+    "• पर्स सीनर\n\n"
+    "या तटीय मोटरबोट के लिए *default* लिखें।"
 )
 
 
@@ -119,9 +131,9 @@ ROUTE_LEGS = {
 # Alert / hazard info (fake, but realistic for the SW-monsoon demo)
 # ---------------------------------------------------------------------------
 ALERTS = {
-    "weather": "☔ Moderate SW-wind alert (29-33 km/h) valid 14:00-20:00 across "
+    "weather": "Moderate SW-wind alert (29-33 km/h) valid 14:00-20:00 across "
                "the 15 km offshore band; rain squalls near Chellanam.",
-    "cyclone": "🚨 No cyclone warning. A low-pressure lies ~700 km SE off Kochi; "
+    "cyclone": "No cyclone warning. A low-pressure lies ~700 km SE off Kochi; "
                "keep watching IMD/DISACC bulletins.",
     "lightning": [
         "Band 15-25 km offshore off Kochi (9.7-10.0N) — likely 13:30-17:00",
@@ -235,7 +247,7 @@ def format_zone(z):
     return (f"📍 *{z['name']}* (PFZ {z['id']})\n"
             f"  {z['lat']:.4f}N, {z['lng']:.4f}E — ~{z['dist_km']} km from Kochi Harbour\n"
             f"  chl {z['chl']} mg/m³ | SST {z['sst']}°C\n"
-            f"  🎣 {z['hint']}")
+            f"  {z['hint']}")
 
 
 def answer_pfz(boat_type, trip_days=1, lang="en"):
@@ -243,23 +255,23 @@ def answer_pfz(boat_type, trip_days=1, lang="en"):
     zone = select_zone(cat, trip_days)
     if lang == "hi":
         return (
-            "🐟 *आज की सबसे नज़दीकी PFZ (कोच्चि)*\n"
+            "*आज की सबसे नज़दीकी PFZ (कोच्चि)*\n\n"
             f"📍 *{zone['name']}* (PFZ {zone['id']})\n"
             f"  {zone['lat']:.4f}N, {zone['lng']:.4f}E — कोच्चि हारबर से ~{zone['dist_km']} किमी\n"
             f"  क्लोरोफिल {zone['chl']} mg/m³ | SST {zone['sst']}°C\n"
-            f"  🎣 {zone['hint']}\n"
-            f"🚢 आपके {boat_label(label, 'hi')} के लिए — {trip_days} दिन की यात्रा।\n"
-            "🕔 सबसे अच्छा समय: 05:30–09:30 और 16:40–19:00।\n"
-            "⚠️ डेमो डेटा — जाने से पहले INCOIS PFZ बुलेटिन ज़रूर देखें।\n"
-            "💡 रास्ते के लिए *\"route\"* लिखें।"
+            f"  {zone['hint']}\n\n"
+            f"आपके {boat_label(label, 'hi')} के लिए — *{trip_days}* दिन की यात्रा।\n"
+            "सबसे अच्छा समय: 05:30–09:30 और 16:40–19:00।\n\n"
+            # "⚠️ डेमो डेटा — जाने से पहले INCOIS PFZ बुलेटिन ज़रूर देखें।\n"
+            "रास्ते के लिए *\"route\"* लिखें।"
         )
     return (
-        "🐟 *NEAREST PFZ TODAY (Kochi)*\n"
-        f"{format_zone(zone)}\n"
-        f"🚢 for your {label}, {trip_days}-day trip.\n"
-        "🕔 Best window: 05:30–09:30 (high-tide push) and 16:40–19:00.\n"
-        "⚠️ Demo data — cross-check INCOIS PFZ bulletin before sailing.\n"
-        "💡 *Type \"route\"* for the waypoints to this zone."
+        "*NEAREST PFZ TODAY (Kochi)*\n\n"
+        f"{format_zone(zone)}\n\n"
+        f"for your {label}, *{trip_days}*-day trip.\n"
+        "Best window: 05:30–09:30 (high-tide push) and 16:40–19:00.\n\n"
+        # "⚠️ Demo data — cross-check INCOIS PFZ bulletin before sailing.\n"
+        "*Type \"route\"* for the waypoints to this zone."
     )
 
 
@@ -270,25 +282,29 @@ def answer_conditions(day_num=1, lang="en"):
             f"• {t['time']} {_hi(TIDE_TYPE_HI, t['type'])} पानी {t['height_m']}m"
             for t in TIDES)
         return (
-            f"🌊 *ज्वार, समुद्र और मौसम — {friendly_day(day_num, 'hi')}*\n"
-            f"📅 {tomorrow_str() if day_num == 2 else today_str()}\n\n"
+            f"*ज्वार, समुद्र और मौसम — {friendly_day(day_num, 'hi')}*\n"
+            f"{tomorrow_str() if day_num == 2 else today_str()}\n\n"
             f"*समुद्र:* {_hi(SEA_HI, f['sea'])}\n"
-            f"• लहर {f['wave_m']} मी | हवा {f['wind_kmph']} किमी/घंटा\n"
-            f"• दृश्यता {f['vis_km']} किमी | धारा {f['current_kn']} kn\n"
-            f"• नोट: {_hi(NOTE_HI, f['note'])}\n\n"
-            f"⏳ *ज्वार-भाटा*\n{tides}\n"
-            "ऊँचे पानी के बाद 1 घंटे के भीतर रवाना होना सबसे सुरक्षित। ⛵"
+            f"लहर: {f['wave_m']} मी\n"
+            f"हवा: {f['wind_kmph']} किमी/घंटा\n"
+            f"दृश्यता: {f['vis_km']} किमी\n"
+            f"धारा: {f['current_kn']} kn\n"
+            f"नोट: {_hi(NOTE_HI, f['note'])}\n\n"
+            f"*ज्वार-भाटा*\n{tides}\n\n"
+            "ऊँचे पानी के बाद 1 घंटे के भीतर रवाना होना सबसे सुरक्षित।"
         )
     tides = "\n".join(f"• {t['time']} {t['type']} {t['height_m']}m" for t in TIDES)
     return (
-        f"🌊 *Tide, Sea & Weather — {friendly_day(day_num, lang)}*\n"
-        f"📅 {tomorrow_str() if day_num == 2 else today_str()}\n\n"
+        f"*Tide, Sea & Weather — {friendly_day(day_num, lang)}*\n"
+        f"{tomorrow_str() if day_num == 2 else today_str()}\n\n"
         f"*Sea state:* {f['sea']}\n"
-        f"• Wave {f['wave_m']} m | Wind {f['wind_kmph']} km/h\n"
-        f"• Visibility {f['vis_km']} km | Current {f['current_kn']} kn\n"
-        f"• Note: {f['note']}\n\n"
-        f"⏳ *Tides tomorrow*\n{tides}\n"
-        "⛵ Safer to depart within 1 h of slack water after high tide."
+        f"Wave: {f['wave_m']} m\n"
+        f"Wind: {f['wind_kmph']} km/h\n"
+        f"Visibility: {f['vis_km']} km\n"
+        f"Current: {f['current_kn']} kn\n"
+        f"Note: {f['note']}\n\n"
+        f"*Tides tomorrow*\n{tides}\n\n"
+        "Safer to depart within 1 h of slack water after high tide."
     )
 
 
@@ -297,8 +313,8 @@ def answer_safety(boat_type, trip_days=1, lang="en"):
     lim = SAFETY_LIMITS[cat]
     days = max(1, int(trip_days or 1))
     hi = lang == "hi"
-    head = (f"🦺 *समुद्र सुरक्षा — {boat_label(label, 'hi')}, {days} दिन की यात्रा*"
-            if hi else f"🦺 *SEA SAFETY — {label}, {days}-day trip*")
+    head = (f"*समुद्र सुरक्षा — {boat_label(label, 'hi')}, {days} दिन की यात्रा*\n"
+            if hi else f"*SEA SAFETY — {label}, {days}-day trip*\n")
     lines = [head]
     for n in range(1, min(days, 3) + 1):
         f = FORECASTS.get(n, FORECASTS[min(3, n)])
@@ -311,26 +327,27 @@ def answer_safety(boat_type, trip_days=1, lang="en"):
             lines.append(f"{'🟢' if ok else '🔴'} Day {n} ({f['sea']}): wave {f['wave_m']}m "
                          f"(limit {lim['wave_max']}m), wind {f['wind_kmph']} "
                          f"(limit {lim['wind_max']} km/h)")
+    lines.append("")
     safe = all(FORECASTS.get(i, FORECASTS[3])["wave_m"] <= lim["wave_max"]
                and FORECASTS.get(i, FORECASTS[3])["wind_kmph"] <= lim["wind_max"]
                for i in range(1, min(days, 3) + 1))
     if hi:
-        lines.append("✅ *जाना सुरक्षित है।*" if safe
-                     else "⚠️ *सावधान — इस नाव के लिए मौसम प्रतिकूल।*")
+        lines.append("✅ *जाना सुरक्षित है।*\n" if safe
+                     else "⚠️ *सावधान — इस नाव के लिए मौसम प्रतिकूल।*\n")
         if days >= 2 and cat != "mechanized":
-            lines.append("📌 दिन 2 पर लहरें बढ़ेंगी — 1 दिन की यात्रा या मैकेनाइज़्ड नाव बेहतर।")
+            lines.append("दिन 2 पर लहरें बढ़ेंगी — 1 दिन की यात्रा या मैकेनाइज़्ड नाव बेहतर।")
     else:
-        lines.append("✅ *SAFE to venture out.*" if safe
-                     else "⚠️ *CAUTION — adverse window for this boat.*")
+        lines.append("✅ *SAFE to venture out.*\n" if safe
+                     else "⚠️ *CAUTION — adverse window for this boat.*\n")
         if days >= 2 and cat != "mechanized":
-            lines.append("📌 Day 2 shows rising swell — prefer a 1-day trip or a mechanized boat.")
+            lines.append("Day 2 shows rising swell — prefer a 1-day trip or a mechanized boat.")
     return "\n".join(lines)
 
 
 ALERTS_HI = {
-    "weather": "🌬️ तेज़ हवाओं की चेतावनी: 14:00–20:00 तक तट से 15 किमी की पट्टी में "
+    "weather": "तेज़ हवाओं की चेतावनी: 14:00–20:00 तक तट से 15 किमी की पट्टी में "
                "29–33 किमी/घंटा हवाएँ; चेल्लनम के पास बारिश के झोंके।",
-    "cyclone": "🚨 कोई चक्रवात चेतावनी नहीं। कोच्चि से ~700 किमी दक्षिण-पूर्व में "
+    "cyclone": "कोई चक्रवात चेतावनी नहीं। कोच्चि से ~700 किमी दक्षिण-पूर्व में "
                "लो-प्रेशर क्षेत्र; IMD/DISACC बुलेटिन देखते रहें।",
     "small_craft": "भोर के समय छोटी नावों के लिए चेतावनी जारी; कैनो 6 किमी की "
                    "पट्टी के भीतर रहें। (डेमो डेटा)",
@@ -338,23 +355,23 @@ ALERTS_HI = {
 
 
 def answer_alerts(lang="en"):
-    light = "\n".join(f"⚡ {x}" for x in ALERTS["lightning"])
+    light = "\n".join(f"{x}" for x in ALERTS["lightning"])
     if lang == "hi":
         return (
-            "🌪️ *कोच्चि के आसपास लाइव अलर्ट (डेमो)*\n"
-            f"{ALERTS_HI['weather']}\n"
-            f"{ALERTS_HI['cyclone']}\n"
-            f"{ALERTS_HI['small_craft']}\n\n"
-            f"⚡ *बिजली गिरने के समय:*\n{light}\n"
-            "🌀 कोच्चि तट के लिए अभी कोई चक्रवात चेतावनी लागू नहीं।"
+            "*कोच्चि के आसपास लाइव अलर्ट*\n\n"
+            f"• {ALERTS_HI['weather']}\n"
+            f"• {ALERTS_HI['cyclone']}\n"
+            f"• {ALERTS_HI['small_craft']}\n\n"
+            f"*बिजली गिरने के समय:*\n\n{light}\n\n"
+            "कोच्चि तट के लिए अभी कोई चक्रवात चेतावनी लागू नहीं।"
         )
     return (
-        "🌪️ *LIVE ALERTS around Kochi (demo)*\n"
-        f"{ALERTS['weather']}\n"
-        f"{ALERTS['cyclone']}\n"
-        f"{ALERTS['small_craft']}\n\n"
-        f"⚡ *Lightning windows:*\n{light}\n"
-        "🌀 No cyclone watch in force for the Kochi coast."
+        "*LIVE ALERTS around Kochi*\n\n"
+        f"• {ALERTS['weather']}\n"
+        f"• {ALERTS['cyclone']}\n"
+        f"• {ALERTS['small_craft']}\n\n"
+        f"*Lightning windows:*\n\n{light}\n\n"
+        "No cyclone watch in force for the Kochi coast."
     )
 
 
@@ -371,19 +388,19 @@ PRODUCTIVITY_DECLINES_HI = {
 def answer_productivity(region=None, lang="en"):
     if lang == "hi":
         spots = "\n".join(
-            f"• {s['area']}: क्लोरोफिल {s['chl']} mg/m³, SST {s['sst']}°C "
+            f"• {s['area']}: क्लोरोफिल {s['chl']} mg/m³, SST {s['sst']}°C --- "
             f"{'✅ अच्छा' if s['favourable'] else '❌ कम'}"
             for s in CHL_HOTSPOTS)
         decline = PRODUCTIVITY_DECLINES_HI.get((region or "").strip().lower(),
                                                PRODUCTIVITY_DECLINES_HI[""])
-        return ("🧬 *क्लोरोफिल और SST हॉटस्पॉट (कोच्चि)*\n" + spots +
-                "\n\n📉 *पकड़ क्यों घटी?*\n" + decline)
+        return ("*क्लोरोफिल और SST हॉटस्पॉट (कोच्चि)*\n\n" + spots +
+                "\n\n*पकड़ क्यों घटी?*📉\n" + decline)
     spots = "\n".join(
-        f"• {s['area']}: chl {s['chl']} mg/m³, SST {s['sst']}°C {'✅ good' if s['favourable'] else '❌ low'}"
+        f"• {s['area']}: chl {s['chl']} mg/m³, SST {s['sst']}°C --- {'✅ good' if s['favourable'] else '❌ low'}"
         for s in CHL_HOTSPOTS)
     decline = PRODUCTIVITY_DECLINES.get((region or "").strip().lower(), PRODUCTIVITY_DECLINES[""])
-    return ("🧬 *CHLOROPHYLL & SST hot spots (Kochi)*\n" + spots +
-            "\n\n📉 *Why did productivity drop?*\n" + decline)
+    return ("*CHLOROPHYLL & SST hot spots (Kochi)*\n\n" + spots +
+            "\n\n*Why did productivity drop?*📉 \n" + decline)
 
 
 GEO_RULE_HI = {
@@ -399,15 +416,15 @@ GEO_RULE_HI = {
 def answer_avoid(lang="en"):
     if lang == "hi":
         zones = "\n".join(
-            f"🚫 {z['name']}\n   क्षेत्र: {z['coords']}\n   नियम: {_hi(GEO_RULE_HI, z['rule'])}"
+            f"• *{z['name']}*\n   क्*षेत्र:* {z['coords']}\n   *नियम:* {_hi(GEO_RULE_HI, z['rule'])}"
             for z in GEO_FENCES)
-        return ("🧭 *निषिद्ध / जियोफ़ेंस ज़ोन (कोच्चि)*\n" + zones +
-                "\n\n🛰️ हर बताए गए क्षेत्र से 500 मीटर की दूरी रखें।")
+        return ("*निषिद्ध / जियोफ़ेंस ज़ोन (कोच्चि)*\n\n" + zones +
+                "\n\nहर बताए गए क्षेत्र से 500 मीटर की दूरी रखें।")
     zones = "\n".join(
-        f"🚫 {z['name']}\n   coord: {z['coords']}\n   rule: {z['rule']}"
+        f"• *{z['name']}*\n   *coord:* {z['coords']}\n   *rule:* {z['rule']}"
         for z in GEO_FENCES)
-    return ("🧭 *AVOID / GEOFENCED zones (Kochi)*\n" + zones +
-            "\n\n🛰️ Keep a 500 m buffer around every polygon listed above.")
+    return ("*AVOID / GEOFENCED zones (Kochi)*\n\n" + zones +
+            "\n\nKeep a 500 m buffer around every polygon listed above.")
 
 
 def answer_route(boat_type, trip_days=1, lang="en"):
@@ -419,46 +436,46 @@ def answer_route(boat_type, trip_days=1, lang="en"):
     eta = max(1, round(zone["dist_km"] / 18.0, 1))
     if lang == "hi":
         return (
-            f"🧭 *रास्ता (ऑप्टिमाइज़्ड) — {zone['name']}*\n"
-            f"रवानगी: कोच्चि हारबर → {zone['dist_km']} किमी\n"
+            f"*रास्ता (ऑप्टिमाइज़्ड) — {zone['name']}*\n\n"
+            f"रवानगी: कोच्चि हारबर → *{zone['dist_km']} किलोमीटर*\n"
             f"{legs_text}\n\n"
-            f"⛽ ईंधन अनुमान: {fuel} लीटर (एक तरफ़ा) | समय ≈ {eta} घंटे (6 kn)।\n"
-            "🚨 VTS लेन के पश्चिम में रहें; गुंडू लाइट के पास निषिद्ध क्षेत्र न पार करें।"
+            f"⛽ *ईंधन अनुमान:* {fuel} लीटर (एक तरफ़ा) | समय ≈ {eta} घंटे (6 kn)।\n"
+            "VTS लेन के पश्चिम में रहें; गुंडू लाइट के पास निषिद्ध क्षेत्र न पार करें।"
         )
     return (
-        f"🧭 *ROUTE (optimised) to {zone['name']}*\n"
-        f"Dep: Kochi Harbour → {zone['dist_km']} km\n"
+        f"*ROUTE (optimised) to {zone['name']}*\n\n"
+        f"Dep: Kochi Harbour → *{zone['dist_km']} km*\n"
         f"{legs_text}\n\n"
         f"⛽ Fuel est: {fuel} L one-way | ETA ≈ {eta} h at 6 kn.\n"
-        f"🚨 Stay W of the VTS lane; no geofenced crossing near Gundu Light."
+        f"Stay W of the VTS lane; no geofenced crossing near Gundu Light."
     )
 
 
 def answer_menu(lang="en"):
     if lang == "hi":
         return (
-            "🐟 *कोच्चि मरीन इंफो बोट* (डेमो बैकएंड)\n"
+            "*तरंग: मरीन इंफो बोट* (कोच्चि के लिए डेमो) 🐟\n\n"
             "मुझे कुछ भी पूछें:\n"
-            "1️⃣ PFZ — 'आज सबसे नज़दीकी PFZ कहाँ है?'\n"
-            "2️⃣ सुरक्षा — 'क्या कल सुबह समुद्र जाना सुरक्षित है?'\n"
-            "3️⃣ स्थिति — 'कोच्चि के पास ज्वार/मौसम कैसा है?'\n"
-            "4️⃣ अलर्ट — 'कोई बिजली/चक्रवात चेतावनी है?'\n"
-            "5️⃣ उत्पादकता — 'क्लोरोफिल? SST? पकड़ क्यों कम हुई?'\n"
-            "6️⃣ रास्ता — 'मेरे जहाज़ के लिए सबसे अच्छा रास्ता?'\n"
-            "7️⃣ निषिद्ध क्षेत्र — 'कौन से इलाके में जाना मना है?'\n\n"
-            "📌 PFZ, सुरक्षा और रास्ते के लिए मैं पहले यात्रा के दिन + नाव पूछूँगा।\n"
+            "1. PFZ — 'आज सबसे नज़दीकी PFZ कहाँ है?'\n"
+            "2. सुरक्षा — 'क्या कल सुबह समुद्र जाना सुरक्षित है?'\n"
+            "3. स्थिति — 'कोच्चि के पास ज्वार/मौसम कैसा है?'\n"
+            "4. अलर्ट — 'कोई बिजली/चक्रवात चेतावनी है?'\n"
+            "5. उत्पादकता — 'क्लोरोफिल? SST? पकड़ क्यों कम हुई?'\n"
+            "6. रास्ता — 'मेरे जहाज़ के लिए सबसे अच्छा रास्ता?'\n"
+            "7. निषिद्ध क्षेत्र — 'कौन से इलाके में जाना मना है?'\n\n"
+            "PFZ, सुरक्षा और रास्ते के लिए मैं पहले यात्रा के दिन + नाव पूछूँगा।\n\n"
             "🌐 भाषा बदलने के लिए 'english' लिखें।"
         )
     return (
-        "🐟 *Kochi Marine Info Bot* (fake demo backend)\n"
+        "*Tarang: Marine Info Bot* (Demo for Kochi) 🐟\n\n"
         "Send me any of:\n"
-        "1️⃣ PFZ — 'where is the nearest PFZ today?'\n"
-        "2️⃣ Safety — 'is it safe to go to sea tomorrow morning?'\n"
-        "3️⃣ Conditions — 'what are the tide/weather near Kochi?'\n"
-        "4️⃣ Alerts — 'any lightning or cyclone alert?'\n"
-        "5️⃣ Productivity — 'chlorophyll? SST? why did catch drop?'\n"
-        "6️⃣ Route — 'what is the best route for my vessel?'\n"
-        "7️⃣ Avoid — 'which zones are forbidden/geofenced?'\n\n"
-        "📌 For PFZ, safety & route I'll first ask your trip days + boat type.\n"
-        "🌐 Type 'hindi' to switch language."
+        "1. PFZ — 'where is the nearest PFZ today?'\n"
+        "2. Safety — 'is it safe to go to sea tomorrow morning?'\n"
+        "3. Conditions — 'what are the tide/weather near Kochi?'\n"
+        "4. Alerts — 'any lightning or cyclone alert?'\n"
+        "5. Productivity — 'chlorophyll? SST? why did catch drop?'\n"
+        "6. Route — 'what is the best route for my vessel?'\n"
+        "7. Avoid — 'which zones are forbidden/geofenced?'\n\n"
+        "For PFZ, safety & route I'll first ask your trip days + boat type.\n\n"
+        "🌐 Type 'हिंदी' to switch language."
     )

@@ -95,7 +95,7 @@ def whatsapp_webhook():
         return str(MessagingResponse()), 200, {"Content-Type": "text/xml"}
 
     if num_media > 0:
-        reply = ("📎 I can't read images/files just yet 🐟 - "
+        reply = ("I can't read images/files just yet 🐟 - "
                  "please type your question as text (e.g. 'pfz today').")
     else:
         reply = bot.handle(from_number, body)
@@ -161,7 +161,7 @@ def _process_voice_note(wa_id: str, media_id: str):
             return
         log.info("VOICE heard (%s): %r", lang, text)
         reply = bot.handle(wa_id, text)
-        reply = ('🎙️ You said / आपने कहा: "' + text.strip() + '"\n\n' + reply)
+        reply = ('You said / आपने कहा: "' + text.strip() + '"\n\n' + reply)
         mid = meta.send_message(wa_id, reply)
         log.info("META OUT (voice) -> %s (msg_id=%s)",
                  reply.splitlines()[0][:60], mid)
