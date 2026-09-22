@@ -2,6 +2,8 @@
 flask>=2.0
 twilio>=8.0
 python-dotenv>=0.21
+pillow>=10.0
+requests>=2.20
 
 # dev/test only
 pytest>=7.0

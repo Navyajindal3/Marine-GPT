@@ -1,26 +1,29 @@
 {
-  "+9190000001": {
+  "919311525276": {
     "step": null,
-    "intent": "pfz",
+    "intent": "route",
     "trip_days": 2,
-    "boat": "trawler",
-    "cat": "mechanized",
+    "day": 1,
+    "boat": "gill netter",
+    "cat": "motorized",
     "offers": [
-      "route",
       "safety",
       "conditions"
     ],
-    "last": "pfz",
+    "last": "route",
     "lang": "en",
     "awaiting_lang": false,
     "pending_switch": null,
     "last_query": null,
-    "last_text": "2 days trawler"
+    "map_kind": "route",
+    "last_text": "route",
+    "pending_text": null
   },
-  "919311525276": {
-    "step": "ask_boat",
-    "intent": "pfz",
-    "trip_days": 5,
+  "917982559126": {
+    "step": null,
+    "intent": null,
+    "trip_days": 1,
+    "day": 1,
     "boat": null,
     "cat": "motorized",
     "offers": [],
@@ -29,7 +32,54 @@
     "awaiting_lang": false,
     "pending_switch": null,
     "last_query": null,
-    "asked_lang": true,
-    "last_text": "near spfz"
+    "map_kind": null,
+    "asked_lang": true
+  },
+  "919871390430": {
+    "step": null,
+    "intent": null,
+    "trip_days": 1,
+    "day": 1,
+    "boat": null,
+    "cat": "motorized",
+    "offers": [],
+    "last": null,
+    "lang": "hi",
+    "awaiting_lang": false,
+    "pending_switch": null,
+    "last_query": null,
+    "map_kind": null,
+    "asked_lang": true
+  },
+  "918510015557": {
+    "step": null,
+    "intent": null,
+    "trip_days": 1,
+    "day": 1,
+    "boat": null,
+    "cat": "motorized",
+    "offers": [],
+    "last": null,
+    "lang": "en",
+    "awaiting_lang": false,
+    "pending_switch": null,
+    "last_query": null,
+    "map_kind": null
+  },
+  "+917982559126": {
+    "step": null,
+    "intent": "call",
+    "trip_days": 2,
+    "day": 1,
+    "boat": "trawler",
+    "cat": "mechanized",
+    "offers": [],
+    "last": "call",
+    "lang": "hi",
+    "awaiting_lang": false,
+    "pending_switch": null,
+    "last_query": null,
+    "map_kind": null,
+    "last_text": "can we connect on call"
   }
 }

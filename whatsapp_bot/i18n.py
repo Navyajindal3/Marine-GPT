@@ -68,6 +68,11 @@ STRINGS = {
         "already_lang": "You're already chatting in *{langname}*.",
         "ask_more": "_Ask me anything else anytime._",
 
+        "same_days_hint": (
+            "\n\nReply *same* to reuse your last trip: {detail}."
+        ),
+        "same_boat_hint": "\n\nReply *same* to reuse: *{boat}*.",
+
         "offers": (
             "*What would you like to check next?*\n"
             "Reply {chips} or simply *yes*."
@@ -95,6 +100,13 @@ STRINGS = {
         "empty": (
             "I didn't catch that.\n"
             "Type *menu* to see what I can help with."
+        ),
+        "call": (
+            "🌊 *TARANG*\n\n"
+            "Sure — wait for 2 min for the call from TARANG! 📞\n\n"
+            "We'll call you shortly on this number. "
+            "Please keep your phone nearby and ensure you can receive calls.\n\n"
+            "⏳ If you don't receive a call in 2 minutes, try again or type *menu*."
         ),
     },
 
@@ -143,6 +155,11 @@ STRINGS = {
         "already_lang": "आप पहले से *{langname}* में बात कर रहे हैं।",
         "ask_more": "_आप जब चाहें कुछ भी और पूछ सकते हैं।_",
 
+        "same_days_hint": (
+            "\n\n*same* लिखें — पिछली यात्रा फिर से: {detail}।"
+        ),
+        "same_boat_hint": "\n\n*same* लिखें — पहले जैसी नाव: *{boat}*।",
+
         "offers": (
             "*आप आगे क्या देखना चाहेंगे?*\n"
             "{chips} भेजें या बस *yes* लिखें।"
@@ -170,6 +187,13 @@ STRINGS = {
         "empty": (
             "मैं आपका संदेश समझ नहीं पाया।\n"
             "क्या-क्या उपलब्ध है देखने के लिए *menu* लिखें।"
+        ),
+        "call": (
+            "🌊 *TARANG*\n\n"
+            "ज़रूर — 2 मिनट wait करें, TARANG से कॉल आएगी! 📞\n\n"
+            "हम इस नंबर पर जल्द ही कॉल करेंगे। "
+            "कृपया अपना फोन पास में रखें और यह सुनिश्चित करें कि आप कॉल receive कर सकते हैं।\n\n"
+            "⏳ अगर 2 मिनट में कॉल नहीं मिलती, तो फिर से try करें या *menu* लिखें।"
         ),
     },
 }

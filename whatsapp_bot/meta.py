@@ -134,3 +134,31 @@ def send_message(wa_id: str, text: str):
         return data["messages"][0]["id"]
     except (KeyError, IndexError):
         return None
+
+
+def send_image(wa_id: str, image_url: str, caption: str = ""):
+    """
+    Send a MAP IMAGE (the route/zone overlays) via Meta Graph API.
+    The image is referenced by a public URL (ngrok) - the free, official
+    WhatsApp Cloud API accepts image-by-link for user-initiated sessions.
+    Returns the message id on success; raises on failure.
+    """
+    url = f"{GRAPH_URL}/{_phone_number_id()}/messages"
+    headers = {
+        "Authorization": f"Bearer {_access_token()}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": wa_id,
+        "type": "image",
+        "image": {"link": image_url, "caption": caption},
+    }
+    resp = requests.post(url, json=payload, headers=headers, timeout=15)
+    if not resp.ok:
+        raise RuntimeError(f"Meta image send failed HTTP {resp.status_code}: {resp.text[:200]}")
+    data = resp.json()
+    try:
+        return data["messages"][0]["id"]
+    except (KeyError, IndexError):
+        return None

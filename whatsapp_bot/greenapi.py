@@ -140,3 +140,26 @@ def send_message(phone_digits: str, text: str):
         raise RuntimeError(
             f"GREEN-API send failed HTTP {status}: {str(data)[:200]}")
     return data.get("idMessage") if isinstance(data, dict) else None
+
+
+def send_file_url(phone_digits: str, file_url: str, caption: str = ""):
+    """
+    Send a MAP IMAGE via GREEN-API sendFileByUrl (route/zone overlays).
+
+    Green API downloads the file from the PUBLIC url and delivers it as a
+    WhatsApp media message. Returns idMessage; raises RuntimeError on failure.
+    """
+    chat_id = f"{phone_digits}@c.us"
+    url = f"{_base_url()}/sendFileByUrl"
+    payload = {
+        "chatId": chat_id,
+        "url": file_url,
+        "fileName": "tarang-map.jpg",
+    }
+    if caption:
+        payload["caption"] = caption
+    status, data = _curl_json("POST", url, payload)
+    if status >= 400:
+        raise RuntimeError(
+            f"GREEN-API sendFileByUrl failed HTTP {status}: {str(data)[:200]}")
+    return data.get("idMessage") if isinstance(data, dict) else None

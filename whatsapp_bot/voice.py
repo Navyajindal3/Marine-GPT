@@ -17,6 +17,7 @@ import logging
 import os
 import tempfile
 import threading
+import time
 
 import requests
 
@@ -94,17 +95,34 @@ def download_meta_media(media_id: str) -> str:
     from meta import GRAPH_URL, _access_token  # avoid a circular import
 
     headers = {"Authorization": f"Bearer {_access_token()}"}
-    info = requests.get(f"{GRAPH_URL}/{media_id}", headers=headers, timeout=15)
-    if not info.ok:
-        raise RuntimeError(f"media lookup failed HTTP {info.status_code}")
-    media_url = info.json().get("url")
-    if not media_url:
-        raise RuntimeError("media lookup returned no url")
+    last_err = None
+    for attempt in range(1, 4):
+        try:
+            info = requests.get(f"{GRAPH_URL}/{media_id}", headers=headers,
+                                timeout=15)
+            if info.ok:
+                data = info.json()
+                media_url = data.get("url") if isinstance(data, dict) else None
+                if media_url:
+                    break
+                last_err = f"media lookup returned no url (HTTP {info.status_code})"
+            else:
+                body = ""
+                try:
+                    body = info.text[:300]
+                except Exception:
+                    pass
+                last_err = f"media lookup failed HTTP {info.status_code}: {body}"
+        except Exception as exc:  # network hiccup -> retry
+            last_err = f"media lookup exception: {exc}"
+        if attempt < 3:
+            time.sleep(1.5 * attempt)
+    else:
+        raise RuntimeError(last_err)
 
     blob = requests.get(media_url, headers=headers, timeout=30)
     if not blob.ok:
         raise RuntimeError(f"media download failed HTTP {blob.status_code}")
-
     out_dir = os.path.join(tempfile.gettempdir(), "kbot_audio")
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, f"audio_{media_id}.ogg")
@@ -121,23 +139,61 @@ def cleanup(path: str):
         pass
 
 
-def transcribe_audio(path: str) -> tuple:
+def _has_indic(text: str) -> bool:
+    """True when the text contains Devanagari or Malayalam script."""
+    return any(ord(ch) in range(0x0900, 0x097F + 1) or
+               ord(ch) in range(0x0D00, 0x0D7F + 1) for ch in text)
+
+
+# Script/marine guidance for Whisper: WhatsApp voice notes are short and
+# accented, and Whisper often "romanizes" Hindi (kya kal samudra...) instead
+# of writing Devanagari. This prompt fixes BOTH by (a) giving the domain and
+# (b) demanding the right script - the router then understands the query.
+_TRANSCRIBE_PROMPT = (
+    "Short marine advisory queries about the sea off Kochi, India: fishing "
+    "zones, tides, waves, wind, whether it is safe to go fishing. "
+    "If the speaker uses Hindi or Hinglish, write the transcript in "
+    "Devanagari script - for example 'क्या कल समुद्र जाना सुरक्षित है', "
+    "'कितने दिन', 'मछली पकड़ने की जगह' - never romanized. "
+    "If the speaker uses English, keep the transcript in English."
+)
+
+
+def transcribe_audio(path: str, language: str = "auto") -> tuple:
     """
     Speech-to-text via faster-whisper (auto-detects Hindi/English per note).
 
-    Returns (text, language_code) e.g. ("pfz today", "en").
+    Returns (text, language_code) e.g. ("pfz today", "en"),
+    ("क्या कल समुद्र जाना सुरक्षित है", "hi").
     Raises RuntimeError when transcription is unavailable.
     """
     model = _get_model()
-    # vad_filter trims silence/noise - helps with harbour & mic noise.
-    segments, info = model.transcribe(path, beam_size=1, vad_filter=True)
-    parts = []
-    total = 0
-    for seg in segments:
-        piece = seg.text.strip()
-        if piece:
-            parts.append(piece)
-            total += len(piece)
-        if total > 500:  # keep very long notes from flooding the chat
-            break
-    return " ".join(parts), getattr(info, "language", None)
+    want_lang = None if language in (None, "", "auto", "detect") else language
+
+    def run(prompt):
+        # vad_filter trims silence/noise - helps with harbour & mic noise.
+        segments, info = model.transcribe(
+            path, language=want_lang, beam_size=3, best_of=3,
+            vad_filter=True, condition_on_previous_text=False,
+            initial_prompt=prompt)
+        parts, total = [], 0
+        for seg in segments:
+            piece = seg.text.strip()
+            if piece:
+                parts.append(piece)
+                total += len(piece)
+            if total > 500:  # keep very long notes from flooding the chat
+                break
+        return " ".join(parts), getattr(info, "language", None)
+
+    text, dl = run(_TRANSCRIBE_PROMPT)
+    # Whisper frequently transliterates Hindi/Malayalam into Latin script.
+    # When the detected language is Indic but no Indic script came out,
+    # re-run forcing that language + a script demand - this fixes most
+    # "didn't grasp what I said" voice failures.
+    if dl in ("hi", "ml", "mr", "bn") and text and not _has_indic(text):
+        retry, _ = run(_TRANSCRIBE_PROMPT +
+                       " Write every Hindi word in Devanagari script.")
+        if _has_indic(retry):
+            return retry, dl
+    return text, dl

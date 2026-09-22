@@ -28,6 +28,42 @@ MALAYALAM_HINTS = {
 }
 MALAYALAM_RANGE = range(0x0D00, 0x0D7F + 1)
 
+# Romanized Hindi (Hinglish) -> Devanagari. Whisper often transcribes Hindi
+# voice notes in LATIN letters ("kya kal samudra jana surakshit hai"); mapping
+# those words to Devanagari makes the existing Hindi keyword tables + language
+# detection work, so a spoken (or mistranscribed) Hinglish query is answered
+# correctly and IN Hindi.
+HINGLISH = {
+    "kya": "क्या", "kal": "कल", "aaj": "आज", "parson": "परसों",
+    "samudra": "समुद्र", "samundar": "समुद्र", "sagar": "समुद्र",
+    "surakshit": "सुरक्षित", "suraksha": "सुरक्षा", "khatra": "खतरा",
+    "khatarnak": "खतरनाक", "kshetra": "क्षेत्र",
+    "machhli": "मछली", "machli": "मछली", "machhali": "मछली",
+    "pakadne": "पकड़ने", "pakarna": "पकड़ना", "jagah": "जगह",
+    "jage": "जगह", "kitaney": "कितने", "kitne": "कितने", "din": "दिन",
+    "mausam": "मौसम", "jwar": "ज्वार", "bhata": "भाटा", "lahar": "लहर",
+    "hawa": "हवा", "hawaa": "हवा",
+    "chetawani": "चेतावनी", "chakravat": "चक्रवात", "toofan": "तूफान",
+    "tufan": "तूफान", "bijli": "बिजली",
+    "rasta": "रास्ता", "raasta": "रास्ता", "manahai": "मना है",
+    "mana hai": "मना है", "bachkar": "बच कर",
+    "utpadakta": "उत्पादकता", "klorofil": "क्लोरोफिल", "kam": "कम",
+    "nauka": "नाव", "naav": "नाव", "madad": "मदद", "menyu": "मेन्यू",
+    "namaste": "नमस्ते", "jana": "जाना", "jaana": "जाना",
+}
+
+_HINGLISH_RE = re.compile(
+    r"\b(" + "|".join(sorted(HINGLISH, key=len, reverse=True)) + r")\b",
+    re.IGNORECASE)
+
+
+def hinglish_to_devanagari(text):
+    """Romanized-Hindi -> Devanagari, when the text already isn't Indic."""
+    if not text or any(ord(ch) in range(0x0900, 0x097F + 1) or
+                       ord(ch) in MALAYALAM_RANGE for ch in text):
+        return text
+    return _HINGLISH_RE.sub(lambda m: HINGLISH[m.group(1).lower()], text)
+
 
 def transliterate_malayalam(raw: str):
     """Swap known Malayalam words for English; report if Malayalam was seen."""
@@ -66,10 +102,18 @@ INTENT_KEYWORDS = {
             "best fishing", "where fish", "where can i fish", "catch",
             "fish location", "spot", "good spot",
             "मछली पकड़ने", "मछली कहाँ", "पकड़ने की जगह", "मछली की जगह"],
+    "call": ["phone call", "phone", "call me", "call", "calling", "ring",
+             "connect on phone", "connect on a call", "voice call",
+             "can we talk on phone", "can we talk on call",
+             "can we call", "can we connect on call", "can we connect on phone", "callback", "гарячая линия", "phone pe baat",
+             "phone par baat", "फोन", "फोन पर", "कॉल", "कॉल करें",
+             "मेरा फोन नंबर", "telephonic", "telephonic conversation",
+             "talk on phone", "talk on call", "speak over phone",
+             "speaking", "baat kar lijiye", "baat karte hain"],
 }
 
 # tie-break order when two intents score equally (safety beats conditions, etc.)
-PRIORITY = ["safety", "pfz", "route", "conditions", "alerts",
+PRIORITY = ["call", "safety", "pfz", "route", "conditions", "alerts",
             "productivity", "avoid", "menu"]
 
 TRIP_CONTEXT_INTENTS = {"pfz", "safety", "route"}  # need days + boat first
@@ -93,7 +137,7 @@ CHITCHAT = [
      "Anytime! That's what I'm here for 🐟"),
     (("are you a robot", "are you a bot", "are you real", "who are you",
       "what are you", "your name", "who made you", "about you"),
-     "I'm Tarang: The Kochi Marine Info bot 🐟 - a demo assistant for Kochi port.\n"
+     "I'm 🌊 *TARANG* — the Kochi Marine Info bot 🐟.\n"
      "Type *menu* to see what I can do."),
     (("how are you", "how's it going", "how are things", "what's up",
       "sup", "how do you do"),
@@ -142,10 +186,10 @@ class Router:
     @staticmethod
     def _default_session():
         return {
-            "step": None, "intent": None, "trip_days": 1,
+            "step": None, "intent": None, "trip_days": 1, "day": 1,
             "boat": None, "cat": "motorized", "offers": [], "last": None,
             "lang": None, "awaiting_lang": False, "pending_switch": None,
-            "last_query": None,
+            "last_query": None, "map_kind": None,
         }
 
     def _reset(self, number, lang=None):
@@ -241,6 +285,20 @@ class Router:
         return min(max(int(n[0]), 1), 3) if n else 1
 
     @staticmethod
+    def _parse_day_offset(text):
+        """Explicit day words ONLY -> 1 (today) / 2 (tomorrow) / 3 (day after).
+        Bare digits are trip days, not calendar days, so '2 days trawler'
+        never becomes 'tomorrow'. None = no day mentioned."""
+        if "day after tomorrow" in text or "परसों" in text:
+            return 3
+        if "tomorrow" in text or "कल" in text or "നാളെ" in text:
+            return 2
+        if ("today" in text or "tonight" in text or "अभी" in text
+                or "आज" in text or "ഇന്ന്" in text):
+            return 1
+        return None
+
+    @staticmethod
     def _is_yes(text):
         return text in ("yes", "yep", "yeah", "ya", "sure", "ok", "okay",
                         "haan", "haan ji", "han", "ha", "हाँ", "हां", "जी",
@@ -262,6 +320,8 @@ class Router:
     def handle(self, number: str, raw: str) -> str:
         """One function for the whole WhatsApp conversation."""
         text, has_ml = transliterate_malayalam(raw.strip().lower())
+        # romanized-Hindi voice transcripts -> Devanagari for keyword matching
+        text = hinglish_to_devanagari(text)
         text = self._normalize(text)
         if not text or not text.strip():
             lang = self.sessions.get(number, {}).get("lang") or "en"
@@ -275,6 +335,7 @@ class Router:
         session = self._prompt(number)
         txt = text.strip()
         lang = session.get("lang")
+        session["map_kind"] = None  # fresh message -> no stale map overlay
 
         # 0) language gate ----------------------------------------------------
         if not lang:
@@ -291,7 +352,10 @@ class Router:
                 session["lang"] = "en"
                 self._save()
             else:
-                intent0 = (self._classify(text, fuzzy=False)
+                # Fuzzy-tolerance on first contact too: a voice note or typed query
+                # with a small typo (e.g. "can we connecvt on call") must still be
+                # recognised as a clear intent, not sent to the bilingual language ask.
+                intent0 = (self._classify(text, fuzzy=True)
                            or self._fuzzy_intent(text))
                 small0 = (self._chitchat(text) or any(
                     w in text for w in ("bye", "goodbye", "good night")))
@@ -369,7 +433,8 @@ class Router:
                 nxt = session["offers"].pop(0)
                 with self._lock:
                     self._save()
-                return self._run_intent(number, session, nxt, text)
+                return self._run_intent(number, session, nxt, text,
+                                        followup=True)
             return i18n.t(lang, "yes_generic")
         if self._is_no(txt):
             session["offers"] = []
@@ -383,23 +448,73 @@ class Router:
         if session["step"] == "ask_days":
             return self._handle_days_reply(number, session, text)
 
+        if self._is_same(txt) and not session.get("step"):
+            # 'same' typed while nothing is pending: repeat the last answer
+            last = session.get("last")
+            if not last:
+                return i18n.t(lang, "unknown")
+            if last in TRIP_CONTEXT_INTENTS:
+                return self._final_answer(number, session, last, txt)
+            return self._direct_answer(number, session, last,
+                                       session.get("last_text") or txt)
+
         # 8) fresh query -> classify intent
         intent = self._classify(text) or self._fuzzy_intent(text)
         if not intent:
             return i18n.t(lang, "unknown")
         return self._run_intent(number, session, intent, text)
 
-    def _run_intent(self, number, session, intent, text):
-        """Route the classified intent: trip Q&A first, else answer now."""
+    def _boat_question_hint(self, session, lang):
+        """Boat question + (when a boat is remembered) a 'same' shortcut."""
+        q = kochi.boat_question(lang)
+        if session.get("boat"):
+            q += i18n.t(lang, "same_boat_hint",
+                        boat=kochi.boat_label(session["boat"], lang))
+        return q
+
+    @staticmethod
+    def _is_same(text):
+        return text in ("same", "same as before", "as before", "wahi",
+                        "pahle jaisa", "पहले जैसा", "पहले जैसा ही", "वही",
+                        "वही नाव")
+
+    def _run_intent(self, number, session, intent, text, followup=False):
+        """Route the classified intent: trip Q&A first, else answer now.
+
+        followup=True  -> came from the contextual offer chips (yes/route right
+        after an answer): reuse the known boat/days instantly.
+        A FRESH typed query ALWAYS (re)asks trip details first, offering the
+        remembered values as a *same* shortcut - never silently assumed.
+        (A bare one-word chip like 'route'/'safety' still counts as a
+        follow-up, since that is what the offer line tells users to type.)"""
         lang = session.get("lang") or "en"
         if intent in TRIP_CONTEXT_INTENTS:
-            if session["boat"]:  # we already know the boat -> answer immediately
-                d = self._parse_days(text)
+            # remember WHICH day the user asked about (today/tomorrow/...)
+            d_off = self._parse_day_offset(text)
+            if d_off:
+                session["day"] = d_off
+            # Single-word chips like 'pfz' / 'route' / 'safety' that the user type
+            # after an answer are follow-ups (that's what the offer line tells them
+            # to type). Also: a multi-word query that CARRIES AN EXPLICIT DAY WORD
+            # AND we already know the boat is a fully-specified query -> answer now.
+            # Never silently assume a boat though: no boat yet -> still ask for it.
+            bare_chip = (len(text.split()) == 1 and text in
+                         ("pfz", "safety", "route", "conditions", "alerts",
+                          "productivity", "avoid"))
+            has_day_word = self._parse_day_offset(text) is not None
+            implicit_trip_days = self._parse_days(text)
+            fully_specified = session["boat"] and (followup or bare_chip
+                                                   or has_day_word)
+            if fully_specified:
+                d = implicit_trip_days
                 if d:
                     session["trip_days"] = d
                     self._save()
                 return self._final_answer(number, session, intent, text)
 
+            # Otherwise we need trip details first. If the query already names
+            # a boat or trip days, remember them and re-run so we only ask for
+            # whichever is still missing (one question at a time).
             session["intent"] = intent
             session["last_text"] = text
             days = self._parse_days(text)
@@ -415,17 +530,45 @@ class Router:
             session["step"] = "ask_days" if not days else "ask_boat"
             self._save()
             if not days:
-                return i18n.t(lang, "days_question")
-            return kochi.boat_question(lang)
+                q = i18n.t(lang, "days_question")
+                if session.get("trip_days"):
+                    detail = f"{session['trip_days']} days"
+                    if session.get("boat"):
+                        detail += ", " + kochi.boat_label(session["boat"], lang)
+                    q += i18n.t(lang, "same_days_hint", detail=detail)
+                return q
+            return self._boat_question_hint(session, lang)
 
         return self._direct_answer(number, session, intent, text)
 
     def _handle_days_reply(self, number, session, text):
         lang = session.get("lang") or "en"
+        # 'same' -> reuse the remembered trip (and boat, when known) in one tap
+        if self._is_same(text) and session.get("trip_days"):
+            if session.get("boat"):
+                session["step"] = None
+                self._save()
+                return self._final_answer(
+                    number, session, session["intent"], text) + (
+                    "\n\n" + i18n.t(lang, "ask_more"))
+            session["step"] = "ask_boat"
+            self._save()
+            return self._boat_question_hint(session, lang)
         days = self._parse_days(text)
         if days is None:
+            # Not a number -> the user may have asked a NEW question instead
+            # of answering 'how many days?'. A stale trip Q&A must never
+            # swallow a fresh query.
+            intent = self._classify(text)
+            if intent:
+                session["step"] = None
+                self._save()
+                return self._run_intent(number, session, intent, text)
             return i18n.t(lang, "days_invalid")
         session["trip_days"] = days
+        d_off = self._parse_day_offset(text)
+        if d_off:
+            session["day"] = d_off
         boat, cat = kochi.resolve_boat(text)  # user may name boat in same message
         if boat:
             session["boat"], session["cat"] = boat, cat
@@ -435,17 +578,37 @@ class Router:
                 "\n\n" + i18n.t(lang, "ask_more"))
         session["step"] = "ask_boat"
         self._save()
-        return kochi.boat_question(lang)
+        return self._boat_question_hint(session, lang)
 
     def _handle_boat_reply(self, number, session, text):
         lang = session.get("lang") or "en"
-        if any(t in text for t in ("default", "auto", "any", "skip")):
+        d_off = self._parse_day_offset(text)
+        if d_off:
+            session["day"] = d_off
+        if self._is_same(text) and session.get("boat"):
+            pass  # keep the remembered boat (the 'same' shortcut)
+        elif any(t in text for t in ("default", "auto", "any", "skip")):
             session["boat"], session["cat"] = "gill netter", "motorized"
         else:
             boat, cat = kochi.resolve_boat(text)
             if not boat:
+                if self._is_same(text):
+                    return i18n.t(lang, "boat_invalid")  # nothing stored to reuse
+                # Not a boat name -> the user probably asked a NEW question
+                # while the bot was waiting for the boat type (e.g. they typed
+                # 'is it safe to go to sea tomorrow' instead of a boat).
+                # Re-classify and answer the fresh query - never swallow it.
+                intent = self._classify(text) or self._fuzzy_intent(text)
+                if intent:
+                    session["step"] = None
+                    self._save()
+                    return self._run_intent(number, session, intent, text)
                 return i18n.t(lang, "boat_invalid")
             session["boat"], session["cat"] = boat, cat
+        # combined replies like 'trawler, 2 days' also update the trip length
+        d = self._parse_days(text)
+        if d and 1 <= d <= 10:  # ignore stray digits (e.g. '25 hp outboard')
+            session["trip_days"] = d
         session["step"] = None
         self._save()
         return self._final_answer(number, session, session["intent"], text)
@@ -471,17 +634,23 @@ class Router:
         lang = session.get("lang") or "en"
         td = session["trip_days"]
         boat = session["boat"] or "gill netter"
+        day = session.get("day") or 1
         if intent == "pfz":
-            body = kochi.answer_pfz(boat, td, lang)
+            body = kochi.answer_pfz(boat, td, lang, day)
         elif intent == "safety":
-            body = kochi.answer_safety(boat, td, lang)
+            body = kochi.answer_safety(boat, td, lang, day)
         elif intent == "route":
-            body = kochi.answer_route(boat, td, lang)
+            body = kochi.answer_route(boat, td, lang, day)
         else:
             body = kochi.answer_menu(lang)
         session["intent"] = intent
         session["offers"] = list(OFFERS.get(intent, []))
         session["last"] = intent
+        session["step"] = None  # answering always closes a pending Q&A
+        # Map overlay for the reply: route -> dashed safe-route map,
+        # pfz -> fishing-zone map, everything else -> no map.
+        session["map_kind"] = ("route" if intent == "route" else
+                               "zone" if intent == "pfz" else None)
         if text:
             session["last_text"] = text
         self._save()
@@ -490,22 +659,45 @@ class Router:
     def _direct_answer(self, number, session, intent, text):
         lang = session.get("lang") or "en"
         if intent == "conditions":
-            body = kochi.answer_conditions(self._day_offset(text), lang)
+            day = self._day_offset(text)
+            session["day"] = day  # follow-up offers inherit the asked day
+            body = kochi.answer_conditions(day, lang)
         elif intent == "alerts":
             body = kochi.answer_alerts(lang)
         elif intent == "productivity":
             body = kochi.answer_productivity(text, lang)
         elif intent == "avoid":
             body = kochi.answer_avoid(lang)
+        elif intent == "call":
+            body = i18n.t(lang, "call")
         else:
             body = kochi.answer_menu(lang)
         session["intent"] = intent
         session["offers"] = list(OFFERS.get(intent, []))
         session["last"] = intent
+        session["step"] = None  # any direct/menu answer cancels a pending Q&A
+        # avoid -> red restricted-areas map overlay; everything else nothing.
+        session["map_kind"] = "avoid" if intent == "avoid" else None
         if text:
             session["last_text"] = text
         self._save()
         return body + self._followup_line(intent, lang)
+
+    def map_context(self, number):
+        """Map info for the last reply: (kind, zone, day).
+        kind: 'route' | 'zone' | 'avoid' | None. Consumed once by the caller."""
+        sess = self.sessions.get(number)
+        if not sess:
+            return None, None, None
+        kind = sess.get("map_kind") or None
+        sess["map_kind"] = None  # consumed once by the caller
+        if kind in ("route", "zone"):
+            cat = sess.get("cat") or "motorized"
+            td = sess.get("trip_days") or 1
+            day = sess.get("day") or 1
+            zone = kochi.select_zone(cat, td, day)
+            return kind, zone, day
+        return kind, None, None
 
     @staticmethod
     def _followup_line(intent, lang="en"):
